@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: mycompass-mwms
+    env: php
+    plan: free
+    documentRoot: public
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      npm install --legacy-peer-deps
+      npm run build
+      php artisan migrate --force
+      php artisan db:seed --force
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        value: base64:o5959sM9H3G8J6K2p8hY3V5a0Xz2c8m1N4P7o6R4D5tY=
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mycompass-db
+          property: connectionString
+
+databases:
+  - name: mycompass-db
+    plan: free
