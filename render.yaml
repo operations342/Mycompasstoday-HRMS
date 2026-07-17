@@ -3,7 +3,8 @@ services:
     name: mycompass-mwms
     env: php
     plan: free
-    documentRoot: public
+    envSpecificDetails:
+      documentRoot: public
     buildCommand: |
       composer install --no-dev --optimize-autoloader
       npm install --legacy-peer-deps
