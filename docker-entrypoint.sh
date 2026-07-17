@@ -29,8 +29,6 @@ if (!$dbReady) {
 if [ $? -eq 0 ]; then
     echo "✅ Database is ready! Running migrations..."
     php artisan migrate --force
-    echo "🌱 Seeding default datasets..."
-    php artisan db:seed --force
 else
     echo "❌ Database connection timed out. Skipping migrations."
 fi
