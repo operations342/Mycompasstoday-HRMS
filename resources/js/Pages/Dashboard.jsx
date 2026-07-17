@@ -3,7 +3,28 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 
 export default function Dashboard(props) {
-    const { isAdminView, metrics, allUsers } = props;
+    const { 
+        isAdminView, 
+        metrics, 
+        allUsers, 
+        subscriptionOverview, 
+        expiredSubscriptions, 
+        expiringSoonSubscriptions 
+    } = props;
+
+    // Check if we should open the Expiry Alert Modal popup
+    const [isAlertOpen, setIsAlertOpen] = React.useState(() => {
+        if (!isAdminView) return false;
+        const hasExpired = expiredSubscriptions && expiredSubscriptions.length > 0;
+        const hasExpiring = expiringSoonSubscriptions && expiringSoonSubscriptions.length > 0;
+        const isDismissed = sessionStorage.getItem('mwms-alert-dismissed') === 'true';
+        return (hasExpired || hasExpiring) && !isDismissed;
+    });
+
+    const handleDismissAlert = () => {
+        sessionStorage.setItem('mwms-alert-dismissed', 'true');
+        setIsAlertOpen(false);
+    };
 
     return (
         <AuthenticatedLayout>
@@ -75,6 +96,45 @@ export default function Dashboard(props) {
                             <span className="metrics-value" style={{ fontSize: '1.5rem', margin: '6px 0' }}>{metrics.todaysTasks}</span>
                         </div>
                     </div>
+
+                    {/* Subscription Overview Widget */}
+                    {subscriptionOverview && (
+                        <div className="card-panel" style={{ marginBottom: '32px' }}>
+                            <div className="panel-header" style={{ marginBottom: '16px' }}>
+                                <h3 className="panel-title">🎫 Subscription Overview</h3>
+                                <Link href={route('subscriptions.index')} className="btn btn-secondary btn-sm">
+                                    Manage Subscriptions
+                                </Link>
+                            </div>
+                            <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                                <div className="metrics-card" style={{ padding: '16px', '--card-accent': '#10b981' }}>
+                                    <span className="metrics-label" style={{ fontSize: '0.75rem' }}>🟢 Active</span>
+                                    <span className="metrics-value" style={{ fontSize: '1.8rem', margin: '4px 0' }}>{subscriptionOverview.active}</span>
+                                    <span className="metrics-subtext">&gt; 30 days remaining</span>
+                                </div>
+                                <div className="metrics-card" style={{ padding: '16px', '--card-accent': '#eab308' }}>
+                                    <span className="metrics-label" style={{ fontSize: '0.75rem' }}>🟡 Expiring in 30 Days</span>
+                                    <span className="metrics-value" style={{ fontSize: '1.8rem', margin: '4px 0' }}>{subscriptionOverview.expiring30}</span>
+                                    <span className="metrics-subtext">30–8 days remaining</span>
+                                </div>
+                                <div className="metrics-card" style={{ padding: '16px', '--card-accent': '#f97316' }}>
+                                    <span className="metrics-label" style={{ fontSize: '0.75rem' }}>🟠 Expiring in 7 Days</span>
+                                    <span className="metrics-value" style={{ fontSize: '1.8rem', margin: '4px 0' }}>{subscriptionOverview.expiring7}</span>
+                                    <span className="metrics-subtext">7–3 days remaining</span>
+                                </div>
+                                <div className="metrics-card" style={{ padding: '16px', '--card-accent': '#ef4444' }}>
+                                    <span className="metrics-label" style={{ fontSize: '0.75rem' }}>🔴 Expiring in 2 Days</span>
+                                    <span className="metrics-value" style={{ fontSize: '1.8rem', margin: '4px 0' }}>{subscriptionOverview.expiring2}</span>
+                                    <span className="metrics-subtext">Action required</span>
+                                </div>
+                                <div className="metrics-card" style={{ padding: '16px', '--card-accent': '#1f2937' }}>
+                                    <span className="metrics-label" style={{ fontSize: '0.75rem' }}>⚫ Expired</span>
+                                    <span className="metrics-value" style={{ fontSize: '1.8rem', margin: '4px 0' }}>{subscriptionOverview.expired}</span>
+                                    <span className="metrics-subtext" style={{ color: 'var(--danger)' }}>Needs renewal</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Grid Section for charts / lists */}
                     <div className="section-grid">
@@ -355,6 +415,69 @@ export default function Dashboard(props) {
                     </div>
                 </div>
             )}
+
+                {/* Expiry Alert Login Popup Modal */}
+                {isAlertOpen && (
+                    <div className="mwms-modal-backdrop" style={{ zIndex: 9999 }}>
+                        <div className="mwms-modal-content" style={{ maxWidth: '500px', border: '2px solid var(--danger)' }}>
+                            <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 600 }}>
+                                    🔔 Expiry Alerts
+                                </h3>
+                                <button className="close-btn" onClick={handleDismissAlert}>×</button>
+                            </div>
+                            <div className="modal-body" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                                
+                                {/* Expired Subscriptions Section */}
+                                {expiredSubscriptions && expiredSubscriptions.length > 0 && (
+                                    <div style={{ marginBottom: '20px', border: '1px solid #fee2e2', backgroundColor: '#fef2f2', padding: '12px', borderRadius: '6px' }}>
+                                        <h4 style={{ color: '#ef4444', fontWeight: 'bold', margin: '0 0 8px 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            ❌ Subscription Expired
+                                        </h4>
+                                        <p style={{ fontSize: '0.85rem', color: '#7f1d1d', margin: '0 0 10px 0' }}>
+                                            The following subscriptions have expired. Please renew immediately.
+                                        </p>
+                                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: '#7f1d1d' }}>
+                                            {expiredSubscriptions.map(sub => (
+                                                <li key={sub.id} style={{ marginBottom: '4px' }}>
+                                                    • <strong>{sub.name}</strong> - Expired on: <span style={{ textDecoration: 'underline' }}>{sub.end_date}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* Expiring Soon Subscriptions Section */}
+                                {expiringSoonSubscriptions && expiringSoonSubscriptions.length > 0 && (
+                                    <div style={{ border: '1px solid #ffedd5', backgroundColor: '#fff7ed', padding: '12px', borderRadius: '6px' }}>
+                                        <h4 style={{ color: '#ea580c', fontWeight: 'bold', margin: '0 0 8px 0', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            ⚠ Subscription Expiry Alert
+                                        </h4>
+                                        <p style={{ fontSize: '0.85rem', color: '#7c2d12', margin: '0 0 10px 0' }}>
+                                            The following subscriptions will expire within 2 days.
+                                        </p>
+                                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: '#7c2d12' }}>
+                                            {expiringSoonSubscriptions.map(sub => (
+                                                <li key={sub.id} style={{ marginBottom: '4px' }}>
+                                                    • <strong>{sub.name}</strong> - Expires on: <strong>{sub.end_date}</strong>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                            </div>
+                            <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                <button onClick={handleDismissAlert} className="btn btn-secondary">
+                                    Remind Me Later
+                                </button>
+                                <Link href={route('subscriptions.index')} onClick={handleDismissAlert} className="btn btn-primary">
+                                    View Subscriptions
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
         </AuthenticatedLayout>
     );
 }

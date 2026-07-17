@@ -10,6 +10,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\BugTrackerController;
 use App\Http\Controllers\HRModuleController;
 use App\Http\Controllers\AccountsController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\ProfileController;
 
@@ -74,6 +75,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('accounts', [AccountsController::class, 'index'])->name('accounts.index');
     Route::post('accounts', [AccountsController::class, 'store'])->name('accounts.store');
     Route::post('accounts/{expense}/approve', [AccountsController::class, 'approve'])->name('accounts.approve');
+
+    // Subscriptions
+    Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');
+    Route::patch('subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
+    Route::delete('subscriptions/{id}', [SubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
+    Route::post('subscriptions/{subscription}/renew', [SubscriptionController::class, 'renew'])->name('subscriptions.renew');
 
     // AI Helper endpoints
     Route::post('ai/task-summary', [AIController::class, 'taskSummary'])->name('ai.taskSummary');

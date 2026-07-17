@@ -101,6 +101,70 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Auto-update statuses on dashboard load
+        $allSubs = \App\Models\Subscription::all();
+        foreach ($allSubs as $sub) {
+            if ($sub->status === 'Cancelled') continue;
+            $daysLeft = $sub->days_left;
+            $newStatus = $sub->status;
+            if ($daysLeft <= 0) {
+                $newStatus = 'Expired';
+            } elseif ($daysLeft <= 30) {
+                $newStatus = 'Expiring Soon';
+            } else {
+                $newStatus = 'Active';
+            }
+            if ($sub->status !== $newStatus) {
+                $sub->status = $newStatus;
+                $sub->save();
+            }
+        }
+
+        // Calculate non-overlapping bins for the dashboard widget
+        $subMetrics = [
+            'active' => 0,
+            'expiring30' => 0,
+            'expiring7' => 0,
+            'expiring2' => 0,
+            'expired' => 0,
+        ];
+        
+        $expiredSubs = [];
+        $expiringSoonSubs = [];
+
+        foreach ($allSubs as $sub) {
+            if ($sub->status === 'Cancelled') continue;
+            
+            $days = $sub->days_left;
+            if ($days <= 0) {
+                $subMetrics['expired']++;
+                $expiredSubs[] = [
+                    'id' => $sub->id,
+                    'name' => $sub->name,
+                    'plan' => $sub->plan,
+                    'end_date' => $sub->end_date->format('Y-m-d'),
+                    'days_left' => $days
+                ];
+            } else {
+                if ($days <= 2) {
+                    $subMetrics['expiring2']++;
+                    $expiringSoonSubs[] = [
+                        'id' => $sub->id,
+                        'name' => $sub->name,
+                        'plan' => $sub->plan,
+                        'end_date' => $sub->end_date->format('Y-m-d'),
+                        'days_left' => $days
+                    ];
+                } elseif ($days <= 7) {
+                    $subMetrics['expiring7']++;
+                } elseif ($days <= 30) {
+                    $subMetrics['expiring30']++;
+                } else {
+                    $subMetrics['active']++;
+                }
+            }
+        }
+
         // All users list for filters/assignments
         $allUsers = User::select('id', 'name', 'role', 'department', 'avatar')->get();
 
@@ -121,6 +185,9 @@ class DashboardController extends Controller
             'recentActivity' => $recentComments,
             'recentDailyLogs' => $recentDailyLogs,
             'allUsers' => $allUsers,
+            'subscriptionOverview' => $subMetrics,
+            'expiredSubscriptions' => $expiredSubs,
+            'expiringSoonSubscriptions' => $expiringSoonSubs,
         ]);
     }
 

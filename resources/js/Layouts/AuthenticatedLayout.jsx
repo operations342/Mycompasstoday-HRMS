@@ -91,10 +91,10 @@ export default function AuthenticatedLayout({ children }) {
                     </Link>
 
                     <Link 
-                        href={route('accounts.index')} 
-                        className={`sidebar-link ${route().current('accounts.*') ? 'active' : ''}`}
+                        href={route('subscriptions.index')} 
+                        className={`sidebar-link ${route().current('subscriptions.*') ? 'active' : ''}`}
                     >
-                        <span>💰</span> Accounts & Bills
+                        <span>💳</span> Subscription
                     </Link>
                 </nav>
 
