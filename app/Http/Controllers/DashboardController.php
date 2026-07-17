@@ -50,7 +50,7 @@ class DashboardController extends Controller
         // Group tasks by department and calculate completed vs total
         $deptStats = Task::select('department', 
             DB::raw('count(*) as total'),
-            DB::raw('sum(case when status = "Completed" then 1 else 0 end) as completed')
+            DB::raw("sum(case when status = 'Completed' then 1 else 0 end) as completed")
         )
         ->groupBy('department')
         ->get()
@@ -68,7 +68,7 @@ class DashboardController extends Controller
         // Count of tasks completed by each user
         $employeeProductivity = User::select('users.id', 'users.name', 'users.department', 'users.avatar',
             DB::raw('count(task_user.task_id) as total_tasks'),
-            DB::raw('sum(case when tasks.status = "Completed" then 1 else 0 end) as completed_tasks')
+            DB::raw("sum(case when tasks.status = 'Completed' then 1 else 0 end) as completed_tasks")
         )
         ->leftJoin('task_user', 'users.id', '=', 'task_user.user_id')
         ->leftJoin('tasks', 'task_user.task_id', '=', 'tasks.id')
