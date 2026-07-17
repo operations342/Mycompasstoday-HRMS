@@ -45,120 +45,142 @@ class DatabaseSeeder extends Seeder
 
         $designations = [];
         foreach ($rolesList as $rName) {
-            $designations[$rName] = Designation::create(['name' => $rName]);
+            $designations[$rName] = Designation::firstOrCreate(['name' => $rName]);
         }
 
         // Create main role users
-        $superAdmin = User::create([
-            'name' => 'Sarah Connor (Super Admin)',
-            'email' => 'superadmin@mycompass.com',
-            'password' => $password,
-            'role' => 'Super Admin',
-            'department' => 'HR',
-            'phone' => '+1 (555) 019-2834',
-            'designation_id' => $designations['Operation manager']->id,
-        ]);
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'superadmin@mycompass.com'],
+            [
+                'name' => 'Sarah Connor (Super Admin)',
+                'password' => $password,
+                'role' => 'Super Admin',
+                'department' => 'HR',
+                'phone' => '+1 (555) 019-2834',
+                'designation_id' => $designations['Operation manager']->id,
+            ]
+        );
 
-        $admin = User::create([
-            'name' => 'Michael Scott (Admin)',
-            'email' => 'admin@mycompass.com',
-            'password' => $password,
-            'role' => 'Admin',
-            'department' => 'Back Office',
-            'phone' => '+1 (555) 018-9988',
-            'designation_id' => $designations['Backend Head']->id,
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@mycompass.com'],
+            [
+                'name' => 'Michael Scott (Admin)',
+                'password' => $password,
+                'role' => 'Admin',
+                'department' => 'Back Office',
+                'phone' => '+1 (555) 018-9988',
+                'designation_id' => $designations['Backend Head']->id,
+            ]
+        );
 
-        $manager = User::create([
-            'name' => 'Robert California (Manager)',
-            'email' => 'manager@mycompass.com',
-            'password' => $password,
-            'role' => 'Manager',
-            'department' => 'Development',
-            'phone' => '+1 (555) 017-4837',
-            'designation_id' => $designations['Operation manager']->id,
-        ]);
+        $manager = User::firstOrCreate(
+            ['email' => 'manager@mycompass.com'],
+            [
+                'name' => 'Robert California (Manager)',
+                'password' => $password,
+                'role' => 'Manager',
+                'department' => 'Development',
+                'phone' => '+1 (555) 017-4837',
+                'designation_id' => $designations['Operation manager']->id,
+            ]
+        );
 
-        $teamLead = User::create([
-            'name' => 'Jim Halpert (Team Lead)',
-            'email' => 'teamlead@mycompass.com',
-            'password' => $password,
-            'role' => 'Team Lead',
-            'department' => 'Development',
-            'phone' => '+1 (555) 014-9284',
-            'designation_id' => $designations['Senior Developer']->id,
-        ]);
+        $teamLead = User::firstOrCreate(
+            ['email' => 'teamlead@mycompass.com'],
+            [
+                'name' => 'Jim Halpert (Team Lead)',
+                'password' => $password,
+                'role' => 'Team Lead',
+                'department' => 'Development',
+                'phone' => '+1 (555) 014-9284',
+                'designation_id' => $designations['Senior Developer']->id,
+            ]
+        );
 
-        $employee = User::create([
-            'name' => 'Pam Beesly (Employee)',
-            'email' => 'employee@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Graphic Design',
-            'phone' => '+1 (555) 013-4859',
-            'designation_id' => $designations['Content Creator']->id,
-        ]);
+        $employee = User::firstOrCreate(
+            ['email' => 'employee@mycompass.com'],
+            [
+                'name' => 'Pam Beesly (Employee)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Graphic Design',
+                'phone' => '+1 (555) 013-4859',
+                'designation_id' => $designations['Content Creator']->id,
+            ]
+        );
 
-        $readonly = User::create([
-            'name' => 'Creed Bratton (Read Only)',
-            'email' => 'readonly@mycompass.com',
-            'password' => $password,
-            'role' => 'Read Only User',
-            'department' => 'Research',
-            'phone' => '+1 (555) 012-0000',
-            'designation_id' => $designations['Researcher']->id,
-        ]);
+        $readonly = User::firstOrCreate(
+            ['email' => 'readonly@mycompass.com'],
+            [
+                'name' => 'Creed Bratton (Read Only)',
+                'password' => $password,
+                'role' => 'Read Only User',
+                'department' => 'Research',
+                'phone' => '+1 (555) 012-0000',
+                'designation_id' => $designations['Researcher']->id,
+            ]
+        );
 
         // Additional employees for departments
-        $devUser = User::create([
-            'name' => 'Dwight Schrute (Developer)',
-            'email' => 'developer@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Development',
-            'phone' => '+1 (555) 011-2233',
-            'designation_id' => $designations['Senior Developer']->id,
-        ]);
+        $devUser = User::firstOrCreate(
+            ['email' => 'developer@mycompass.com'],
+            [
+                'name' => 'Dwight Schrute (Developer)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Development',
+                'phone' => '+1 (555) 011-2233',
+                'designation_id' => $designations['Senior Developer']->id,
+            ]
+        );
 
-        $designerUser = User::create([
-            'name' => 'Ryan Howard (Designer)',
-            'email' => 'designer@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Graphic Design',
-            'phone' => '+1 (555) 011-3344',
-            'designation_id' => $designations['Content Creator']->id,
-        ]);
+        $designerUser = User::firstOrCreate(
+            ['email' => 'designer@mycompass.com'],
+            [
+                'name' => 'Ryan Howard (Designer)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Graphic Design',
+                'phone' => '+1 (555) 011-3344',
+                'designation_id' => $designations['Content Creator']->id,
+            ]
+        );
 
-        $researchUser = User::create([
-            'name' => 'Toby Flenderson (Researcher)',
-            'email' => 'researcher@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Research',
-            'phone' => '+1 (555) 011-4455',
-            'designation_id' => $designations['Researcher']->id,
-        ]);
+        $researchUser = User::firstOrCreate(
+            ['email' => 'researcher@mycompass.com'],
+            [
+                'name' => 'Toby Flenderson (Researcher)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Research',
+                'phone' => '+1 (555) 011-4455',
+                'designation_id' => $designations['Researcher']->id,
+            ]
+        );
 
-        $marketingUser = User::create([
-            'name' => 'Kelly Kapoor (Social Media Manager)',
-            'email' => 'marketing@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Marketing',
-            'phone' => '+1 (555) 011-5566',
-            'designation_id' => $designations['Social media Manager']->id,
-        ]);
+        $marketingUser = User::firstOrCreate(
+            ['email' => 'marketing@mycompass.com'],
+            [
+                'name' => 'Kelly Kapoor (Social Media Manager)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Marketing',
+                'phone' => '+1 (555) 011-5566',
+                'designation_id' => $designations['Social media Manager']->id,
+            ]
+        );
 
-        $accountsUser = User::create([
-            'name' => 'Oscar Martinez (Accountant)',
-            'email' => 'accounts@mycompass.com',
-            'password' => $password,
-            'role' => 'Employee',
-            'department' => 'Accounts',
-            'phone' => '+1 (555) 011-6677',
-            'designation_id' => $designations['Accountant']->id,
-        ]);
+        $accountsUser = User::firstOrCreate(
+            ['email' => 'accounts@mycompass.com'],
+            [
+                'name' => 'Oscar Martinez (Accountant)',
+                'password' => $password,
+                'role' => 'Employee',
+                'department' => 'Accounts',
+                'phone' => '+1 (555) 011-6677',
+                'designation_id' => $designations['Accountant']->id,
+            ]
+        );
 
         // --- SEED TASKS ---
         $task1 = Task::create([
