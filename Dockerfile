@@ -40,8 +40,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Set directory permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Copy entrypoint script and make it executable
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose HTTP port
 EXPOSE 80
 
-# Command to run the application
-CMD php artisan migrate --force && php artisan db:seed --force && apache2-foreground
+# Configure entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
