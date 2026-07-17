@@ -1,14 +1,8 @@
 services:
   - type: web
     name: mycompass-mwms
-    env: php
+    env: docker
     plan: free
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      npm install --legacy-peer-deps
-      npm run build
-      php artisan migrate --force
-      php artisan db:seed --force
     envVars:
       - key: APP_ENV
         value: production
@@ -16,8 +10,6 @@ services:
         value: "false"
       - key: APP_KEY
         value: base64:o5959sM9H3G8J6K2p8hY3V5a0Xz2c8m1N4P7o6R4D5tY=
-      - key: DOCUMENT_ROOT
-        value: public
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
