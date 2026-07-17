@@ -7,7 +7,9 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: "false"
+        value: "true"
+      - key: LOG_CHANNEL
+        value: stderr
       - key: APP_KEY
         value: base64:jzCoWWzvAmU8Cr0ZSt9DV3sr92g3alqWCeQN6DTsMeI=
       - key: DB_CONNECTION
