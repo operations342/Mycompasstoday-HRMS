@@ -22,6 +22,20 @@ class TaskController extends Controller
     {
         $query = Task::with(['creator', 'assignees']);
 
+        // Check if viewing recurring templates specifically (Admin/Manager only)
+        if ($request->boolean('view_templates')) {
+            if (!in_array(Auth::user()->role, ['Super Admin', 'Admin', 'Manager'])) {
+                return abort(403, 'Unauthorized action.');
+            }
+            $query->where('is_recurring', true)->whereNull('parent_recurring_id');
+        } else {
+            // Default view: exclude recurring template definitions (show only one-time tasks and generated occurrences)
+            $query->where(function($q) {
+                $q->where('is_recurring', false)
+                  ->orWhereNotNull('parent_recurring_id');
+            });
+        }
+
         // Apply filters
         if ($request->has('department') && $request->department != 'All') {
             $query->where('department', $request->department);
@@ -44,7 +58,7 @@ class TaskController extends Controller
         return Inertia::render('Tasks/TaskIndex', [
             'tasks' => $tasks,
             'employees' => $employees,
-            'filters' => $request->only(['department', 'status', 'priority', 'assignee_id'])
+            'filters' => $request->only(['department', 'status', 'priority', 'assignee_id', 'view_templates'])
         ]);
     }
 
@@ -65,7 +79,24 @@ class TaskController extends Controller
             'assignees.*' => 'exists:users,id',
             'dependencies' => 'nullable|array',
             'tags' => 'nullable|array',
+            // Recurring fields
+            'is_recurring' => 'nullable|boolean',
+            'recurring_frequency' => 'nullable|string|in:Daily,Weekly,Monthly,Yearly,Custom',
+            'recurring_custom_value' => 'nullable|integer|min:1',
+            'recurring_days' => 'nullable|array',
+            'recurring_days.*' => 'string',
+            'recurring_monthly_option' => 'nullable|string',
+            'recurring_start_date' => 'nullable|date',
+            'recurring_end_date' => 'nullable|date',
+            'recurring_never_end' => 'nullable|boolean',
         ]);
+
+        $isRecurring = filter_var($validated['is_recurring'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        // Permissions restriction: Only Admins / Managers can create recurring task templates
+        if ($isRecurring && !in_array(Auth::user()->role, ['Super Admin', 'Admin', 'Manager'])) {
+            return abort(403, 'Only Admins and Managers can create recurring tasks.');
+        }
 
         $task = Task::create([
             'title' => $validated['title'],
@@ -79,6 +110,15 @@ class TaskController extends Controller
             'status' => 'Pending',
             'dependencies' => $validated['dependencies'] ?? [],
             'tags' => $validated['tags'] ?? [],
+            // Recurring template fields
+            'is_recurring' => $isRecurring,
+            'recurring_frequency' => $validated['recurring_frequency'] ?? null,
+            'recurring_custom_value' => $validated['recurring_custom_value'] ?? null,
+            'recurring_days' => $validated['recurring_days'] ?? null,
+            'recurring_monthly_option' => $validated['recurring_monthly_option'] ?? null,
+            'recurring_start_date' => $validated['recurring_start_date'] ?? null,
+            'recurring_end_date' => $validated['recurring_end_date'] ?? null,
+            'recurring_never_end' => filter_var($validated['recurring_never_end'] ?? true, FILTER_VALIDATE_BOOLEAN),
         ]);
 
         // Sync multiple assignees
@@ -88,10 +128,10 @@ class TaskController extends Controller
         TaskHistory::create([
             'task_id' => $task->id,
             'user_id' => Auth::id(),
-            'action' => 'Created the task and assigned to employees'
+            'action' => $isRecurring ? 'Created a recurring task template' : 'Created the task and assigned to employees'
         ]);
 
-        return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
+        return redirect()->route('tasks.index')->with('success', $isRecurring ? 'Recurring task template created successfully.' : 'Task created successfully.');
     }
 
     /**
@@ -288,5 +328,84 @@ class TaskController extends Controller
         ]);
 
         return redirect()->route('knowledge.index')->with('success', 'Task successfully converted to a draft Knowledge Base Article.');
+    }
+
+    /**
+     * Update the task or its recurring series.
+     */
+    public function update(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'department' => 'required|string',
+            'priority' => 'required|string',
+            'start_date' => 'nullable|date',
+            'due_date' => 'nullable|date',
+            'estimated_hours' => 'nullable|numeric',
+            'assignees' => 'required|array',
+            'assignees.*' => 'exists:users,id',
+            'dependencies' => 'nullable|array',
+            'tags' => 'nullable|array',
+            // Option to edit only this occurrence
+            'edit_scope' => 'nullable|string|in:this_occurrence,all_occurrences',
+        ]);
+
+        // Permission check
+        if (!in_array(Auth::user()->role, ['Super Admin', 'Admin', 'Manager'])) {
+            return abort(403, 'Unauthorized action.');
+        }
+
+        $editScope = $validated['edit_scope'] ?? 'this_occurrence';
+
+        if ($task->parent_recurring_id && $editScope === 'this_occurrence') {
+            // "Edit only this occurrence" -> Detach task instance from the recurring series
+            $task->parent_recurring_id = null;
+        }
+
+        $task->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'department' => $validated['department'],
+            'priority' => $validated['priority'],
+            'start_date' => $validated['start_date'] ?? null,
+            'due_date' => $validated['due_date'] ?? null,
+            'estimated_hours' => $validated['estimated_hours'] ?? null,
+            'dependencies' => $validated['dependencies'] ?? [],
+            'tags' => $validated['tags'] ?? [],
+        ]);
+
+        $task->assignees()->sync($validated['assignees']);
+
+        TaskHistory::create([
+            'task_id' => $task->id,
+            'user_id' => Auth::id(),
+            'action' => "Updated task details (Scope: {$editScope})"
+        ]);
+
+        return redirect()->route('tasks.index')->with('success', 'Task updated successfully.');
+    }
+
+    /**
+     * Delete the task or its recurring series.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+
+        if (!in_array(Auth::user()->role, ['Super Admin', 'Admin', 'Manager'])) {
+            return abort(403, 'Unauthorized action.');
+        }
+
+        $deleteScope = $request->input('delete_scope', 'this_occurrence');
+
+        if ($task->is_recurring && $deleteScope === 'all_occurrences') {
+            // Delete the parent template AND all generated occurrences
+            Task::where('parent_recurring_id', $task->id)->delete();
+        }
+
+        $task->delete();
+
+        return redirect()->route('tasks.index')->with('success', 'Task deleted successfully.');
     }
 }

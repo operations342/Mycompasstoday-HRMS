@@ -23,7 +23,16 @@ export default function TaskIndex({ tasks, employees, filters }) {
         estimated_hours: '',
         assignees: [],
         tags: '',
-        dependencies: []
+        dependencies: [],
+        // Recurring variables
+        is_recurring: false,
+        recurring_frequency: 'Daily',
+        recurring_custom_value: 1,
+        recurring_days: [],
+        recurring_monthly_option: 'day_of_month',
+        recurring_start_date: new Date().toISOString().split('T')[0],
+        recurring_end_date: '',
+        recurring_never_end: true,
     });
 
     const submitCreateTask = (e) => {
@@ -87,6 +96,31 @@ export default function TaskIndex({ tasks, employees, filters }) {
             {/* Filter Row */}
             <div className="card-panel" style={{ padding: '16px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                    {/* View Templates / Tasks Selector (Admin only) */}
+                    {['Super Admin', 'Admin', 'Manager'].includes(props.auth.user.role) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Task View Type</span>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <button 
+                                    className={`btn ${!filters.view_templates ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                                    onClick={() => {
+                                        window.location.href = route('tasks.index', { ...filters, view_templates: false });
+                                    }}
+                                >
+                                    Standard Tasks
+                                </button>
+                                <button 
+                                    className={`btn ${filters.view_templates ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                                    onClick={() => {
+                                        window.location.href = route('tasks.index', { ...filters, view_templates: true });
+                                    }}
+                                >
+                                    🔄 Recurring Templates
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Department</span>
                         <select 
@@ -190,7 +224,10 @@ export default function TaskIndex({ tasks, employees, filters }) {
                                                 }}>{task.priority}</span>
                                             </div>
                                             <h4>
-                                                <Link href={route('tasks.show', task.id)}>{task.title}</Link>
+                                                <Link href={route('tasks.show', task.id)}>
+                                                    {(task.parent_recurring_id || task.is_recurring) && <span style={{ marginRight: '6px', title: 'Recurring task' }}>🔁</span>}
+                                                    {task.title}
+                                                </Link>
                                             </h4>
                                             <p>{task.description}</p>
                                             <div className="card-footer">
@@ -244,6 +281,7 @@ export default function TaskIndex({ tasks, employees, filters }) {
                                 <tr key={task.id}>
                                     <td>
                                         <Link href={route('tasks.show', task.id)} style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                            {(task.parent_recurring_id || task.is_recurring) && <span style={{ marginRight: '6px' }}>🔁</span>}
                                             {task.title}
                                         </Link>
                                     </td>
@@ -446,6 +484,128 @@ export default function TaskIndex({ tasks, employees, filters }) {
                                     />
                                 </div>
                             </div>
+
+                            {/* Recurring Task Panel (Visible to Admins and Managers only) */}
+                            {['Super Admin', 'Admin', 'Manager'].includes(props.auth.user.role) && (
+                                <div style={{ margin: '16px 0', border: '1px dashed var(--border-color)', padding: '12px', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={data.is_recurring} 
+                                            onChange={e => setData('is_recurring', e.target.checked)} 
+                                        />
+                                        🔁 Is Recurring Task Template
+                                    </label>
+
+                                    {data.is_recurring && (
+                                        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div className="form-row-2">
+                                                <div className="form-group">
+                                                    <label className="form-label">Recurrence Frequency</label>
+                                                    <select 
+                                                        className="form-control"
+                                                        value={data.recurring_frequency}
+                                                        onChange={e => setData('recurring_frequency', e.target.value)}
+                                                    >
+                                                        <option value="Daily">Daily</option>
+                                                        <option value="Weekly">Weekly</option>
+                                                        <option value="Monthly">Monthly</option>
+                                                        <option value="Yearly">Yearly</option>
+                                                        <option value="Custom">Custom Interval</option>
+                                                    </select>
+                                                </div>
+
+                                                {data.recurring_frequency === 'Custom' && (
+                                                    <div className="form-group">
+                                                        <label className="form-label">Repeat Every X Days</label>
+                                                        <input 
+                                                            type="number" 
+                                                            min="1" 
+                                                            className="form-control" 
+                                                            value={data.recurring_custom_value} 
+                                                            onChange={e => setData('recurring_custom_value', e.target.value)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {data.recurring_frequency === 'Weekly' && (
+                                                <div className="form-group">
+                                                    <label className="form-label">Select Repeat Days</label>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '6px' }}>
+                                                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                                                            <label key={day} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: 'pointer' }}>
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    value={day}
+                                                                    checked={data.recurring_days.includes(day)}
+                                                                    onChange={e => {
+                                                                        const checked = e.target.checked;
+                                                                        setData('recurring_days', checked 
+                                                                            ? [...data.recurring_days, day]
+                                                                            : data.recurring_days.filter(d => d !== day)
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                {day.slice(0,3)}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {data.recurring_frequency === 'Monthly' && (
+                                                <div className="form-group">
+                                                    <label className="form-label">Monthly Repetition Style</label>
+                                                    <select 
+                                                        className="form-control"
+                                                        value={data.recurring_monthly_option}
+                                                        onChange={e => setData('recurring_monthly_option', e.target.value)}
+                                                    >
+                                                        <option value="day_of_month">Same day of the month (e.g. 1st, 15th)</option>
+                                                        <option value="relative_day">Relative day (based on start date)</option>
+                                                    </select>
+                                                </div>
+                                            )}
+
+                                            <div className="form-row-2">
+                                                <div className="form-group">
+                                                    <label className="form-label">Recurrence Start Date</label>
+                                                    <input 
+                                                        type="date" 
+                                                        className="form-control" 
+                                                        value={data.recurring_start_date} 
+                                                        onChange={e => setData('recurring_start_date', e.target.value)}
+                                                    />
+                                                </div>
+
+                                                {!data.recurring_never_end && (
+                                                    <div className="form-group">
+                                                        <label className="form-label">Recurrence End Date</label>
+                                                        <input 
+                                                            type="date" 
+                                                            className="form-control" 
+                                                            value={data.recurring_end_date} 
+                                                            onChange={e => setData('recurring_end_date', e.target.value)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={data.recurring_never_end} 
+                                                        onChange={e => setData('recurring_never_end', e.target.checked)}
+                                                    />
+                                                    Never expire (repeat infinitely)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="form-group">
                                 <label className="form-label">Assign Multiple Employees</label>

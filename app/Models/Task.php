@@ -25,6 +25,17 @@ class Task extends Model
         'is_time_tracking_active',
         'time_tracker_start',
         'dependencies',
+        // Recurring task options
+        'is_recurring',
+        'recurring_frequency',
+        'recurring_custom_value',
+        'recurring_days',
+        'recurring_monthly_option',
+        'recurring_start_date',
+        'recurring_end_date',
+        'recurring_never_end',
+        'parent_recurring_id',
+        'last_generated_at',
     ];
 
     protected $casts = [
@@ -35,6 +46,11 @@ class Task extends Model
         'due_date' => 'date',
         'is_time_tracking_active' => 'boolean',
         'time_tracker_start' => 'datetime',
+        'is_recurring' => 'boolean',
+        'recurring_days' => 'array',
+        'recurring_start_date' => 'date',
+        'recurring_end_date' => 'date',
+        'last_generated_at' => 'datetime',
     ];
 
     // Relationships
@@ -61,5 +77,15 @@ class Task extends Model
     public function histories()
     {
         return $this->hasMany(TaskHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function instances()
+    {
+        return $this->hasMany(Task::class, 'parent_recurring_id')->orderBy('due_date', 'desc');
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(Task::class, 'parent_recurring_id');
     }
 }
