@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -21,7 +22,7 @@ export default function Login({ status, canResetPassword }) {
         });
     };
 
-    const [showPassword, setShowPassword] = React.useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <GuestLayout>
