@@ -21,6 +21,8 @@ export default function Login({ status, canResetPassword }) {
         });
     };
 
+    const [showPassword, setShowPassword] = React.useState(false);
+
     return (
         <GuestLayout>
             <Head title="Log in" />
@@ -52,15 +54,36 @@ export default function Login({ status, canResetPassword }) {
                 <div className="mt-4">
                     <InputLabel htmlFor="password" value="Password" />
 
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <TextInput
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            value={data.password}
+                            className="mt-1 block w-full"
+                            style={{ paddingRight: '40px' }}
+                            autoComplete="current-password"
+                            onChange={(e) => setData('password', e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '1.1rem',
+                                color: '#6b7280'
+                            }}
+                            title={showPassword ? 'Hide Password' : 'Show Password'}
+                        >
+                            {showPassword ? '🙈' : '👁️'}
+                        </button>
+                    </div>
 
                     <InputError message={errors.password} className="mt-2" />
                 </div>
