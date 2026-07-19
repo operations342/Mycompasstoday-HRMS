@@ -39,7 +39,8 @@ Route::get('/setup-admin', function () {
         $designations[$rName] = \App\Models\Designation::firstOrCreate(['name' => $rName]);
     }
 
-    $admin = \App\Models\User::updateOrCreate(
+    // Force seed superadmin@mycompass.com
+    \App\Models\User::updateOrCreate(
         ['email' => 'superadmin@mycompass.com'],
         [
             'name' => 'Jay Rathod',
@@ -51,7 +52,20 @@ Route::get('/setup-admin', function () {
         ]
     );
 
-    return "Admin account successfully verified/created: " . $admin->email;
+    // Force seed jaymycompass@gmail.com (Your personal email)
+    $admin = \App\Models\User::updateOrCreate(
+        ['email' => 'jaymycompass@gmail.com'],
+        [
+            'name' => 'Jay Rathod (Admin)',
+            'password' => $password,
+            'role' => 'Super Admin',
+            'department' => 'HR',
+            'phone' => '8530557587',
+            'designation_id' => $designations['Operation manager']->id,
+        ]
+    );
+
+    return "Admin accounts successfully verified/created for: " . $admin->email;
 });
 
 Route::middleware(['auth'])->group(function () {

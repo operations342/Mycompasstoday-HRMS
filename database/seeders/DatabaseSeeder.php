@@ -48,6 +48,19 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Create secondary Super Admin using personal email
+        User::firstOrCreate(
+            ['email' => 'jaymycompass@gmail.com'],
+            [
+                'name' => 'Jay Rathod (Admin)',
+                'password' => $password,
+                'role' => 'Super Admin',
+                'department' => 'HR',
+                'phone' => '8530557587',
+                'designation_id' => $designations['Operation manager']->id,
+            ]
+        );
+
         // Seed sample Subscriptions for UI demonstration & popup alerts testing
         Subscription::firstOrCreate(
             ['name' => 'ABC School'],
