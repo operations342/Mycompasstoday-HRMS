@@ -39,7 +39,7 @@ Route::get('/setup-admin', function () {
         $designations[$rName] = \App\Models\Designation::firstOrCreate(['name' => $rName]);
     }
 
-    $admin = \App\Models\User::firstOrCreate(
+    $admin = \App\Models\User::updateOrCreate(
         ['email' => 'superadmin@mycompass.com'],
         [
             'name' => 'Jay Rathod',
