@@ -85,6 +85,20 @@ Route::get('/test-login', function () {
     ]);
 });
 
+// Temporary Route to clear caches on Render
+Route::get('/clear-cache', function () {
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    
+    return response()->json([
+        'status' => 'success',
+        'message' => 'All caches cleared successfully on live environment'
+    ]);
+});
+
 Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
