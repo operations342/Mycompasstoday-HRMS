@@ -68,6 +68,23 @@ Route::get('/setup-admin', function () {
     return "Admin accounts successfully verified/created for: " . $admin->email;
 });
 
+// Temporary Route to test Auth::attempt directly on live database
+Route::get('/test-login', function () {
+    $credentials = ['email' => 'jaymycompass@gmail.com', 'password' => 'password'];
+    $success = \Illuminate\Support\Facades\Auth::attempt($credentials);
+    
+    $userExists = \App\Models\User::where('email', 'jaymycompass@gmail.com')->exists();
+    $userHash = $userExists ? \App\Models\User::where('email', 'jaymycompass@gmail.com')->first()->password : null;
+    $passwordMatch = $userHash ? Hash::check('password', $userHash) : false;
+
+    return response()->json([
+        'success' => $success,
+        'user_exists' => $userExists,
+        'password_match_check' => $passwordMatch,
+        'user_details' => $userExists ? \App\Models\User::where('email', 'jaymycompass@gmail.com')->first(['id', 'email', 'name', 'role']) : null
+    ]);
+});
+
 Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
