@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 export default function TaskIndex({ tasks, employees, filters }) {
+    const { auth } = usePage().props;
     const [viewMode, setViewMode] = useState('kanban'); // 'kanban', 'list', 'calendar'
     const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -97,7 +98,7 @@ export default function TaskIndex({ tasks, employees, filters }) {
             <div className="card-panel" style={{ padding: '16px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
                     {/* View Templates / Tasks Selector (Admin only) */}
-                    {['Super Admin', 'Admin', 'Manager'].includes(props.auth.user.role) && (
+                    {['Super Admin', 'Admin', 'Manager'].includes(auth.user.role) && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Task View Type</span>
                             <div style={{ display: 'flex', gap: '4px' }}>
@@ -486,7 +487,7 @@ export default function TaskIndex({ tasks, employees, filters }) {
                             </div>
 
                             {/* Recurring Task Panel (Visible to Admins and Managers only) */}
-                            {['Super Admin', 'Admin', 'Manager'].includes(props.auth.user.role) && (
+                            {['Super Admin', 'Admin', 'Manager'].includes(auth.user.role) && (
                                 <div style={{ margin: '16px 0', border: '1px dashed var(--border-color)', padding: '12px', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
                                         <input 
