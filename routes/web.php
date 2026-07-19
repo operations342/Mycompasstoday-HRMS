@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskController;
@@ -17,6 +18,40 @@ use App\Http\Controllers\ProfileController;
 // Welcome Page redirecting to Login
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+// Temporary Route to seed the live Admin user
+Route::get('/setup-admin', function () {
+    $password = Hash::make('password');
+    $rolesList = [
+        'Senior Developer',
+        'Operation manager',
+        'Social media Manager',
+        'Backend Operator',
+        'Backend Head',
+        'Researcher',
+        'Content Creator',
+        'Accountant'
+    ];
+
+    $designations = [];
+    foreach ($rolesList as $rName) {
+        $designations[$rName] = \App\Models\Designation::firstOrCreate(['name' => $rName]);
+    }
+
+    $admin = \App\Models\User::firstOrCreate(
+        ['email' => 'superadmin@mycompass.com'],
+        [
+            'name' => 'Jay Rathod',
+            'password' => $password,
+            'role' => 'Super Admin',
+            'department' => 'HR',
+            'phone' => '8530557587',
+            'designation_id' => $designations['Operation manager']->id,
+        ]
+    );
+
+    return "Admin account successfully verified/created: " . $admin->email;
 });
 
 Route::middleware(['auth'])->group(function () {
