@@ -29,11 +29,32 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        $email = $request->input('email');
+        $pwdLength = strlen($request->input('password'));
+        
+        \Illuminate\Support\Facades\Log::info("Login attempt payload", [
+            'email' => $email,
+            'password_length' => $pwdLength,
+            'ip' => $request->ip()
+        ]);
 
-        $request->session()->regenerate();
+        try {
+            $request->authenticate();
+            
+            \Illuminate\Support\Facades\Log::info("Login attempt successful", [
+                'email' => $email
+            ]);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+            $request->session()->regenerate();
+            return redirect()->intended(route('dashboard', absolute: false));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Login attempt failed", [
+                'email' => $email,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**
